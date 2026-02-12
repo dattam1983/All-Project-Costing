@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Response Dashboard</title>
+
+<style>
+body {
+  font-family: Arial;
+  margin: 0;
+  padding: 20px;
+  background: #f4f6f9;
+}
+
+h2 {
+  text-align: center;
+}
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+}
+
+select, button, input {
+  padding: 10px;
+  margin: 5px 0;
+  width: 100%;
+}
+
+button {
+  background: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background: white;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  font-size: 13px;
+}
+
+th {
+  background: #343a40;
+  color: white;
+  position: sticky;
+  top: 0;
+}
+
+@media (min-width: 768px) {
+  .controls {
+    display: flex;
+    gap: 10px;
+  }
+  .controls > * {
+    flex: 1;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>Project Form Response Dashboard</h2>
+
+<div class="controls">
+<select id="formSelect">
+<option value="">-- Select Project Form --</option>
+<option value="ACABC General Info">ACABC General Info</option>
+<option value="dairy">Dairy Farming</option>
+<option value="agriTrading">Agri Trading</option>
+<option value="agroService">Agro Service Center</option>
+<option value="briquettes">Briquettes</option>
+<option value="cashew">Cashew Processing</option>
+<option value="harvester">Combined Harvester</option>
+<option value="dalMill">Dal Mill</option>
+<option value="dehydration">Dehydration Unit</option>
+<option value="earthmoving">Earthmoving</option>
+<option value="machineryHiring">Machinery Hiring</option>
+<option value="fishFarming">Fish Farming</option>
+<option value="foodProcessing">Food Processing</option>
+<option value="goatFarming">Goat Farming</option>
+<option value="honeyBee">Honey Bee</option>
+<option value="mushroom">Mushroom</option>
+<option value="nursery">Nursery</option>
+<option value="organicFertilizer">Organic Fertilizer</option>
+<option value="papad">Papad Making</option>
+<option value="pearl">Pearl Farming</option>
+<option value="pig">Pig Farming</option>
+<option value="polyhouse">Polyhouse</option>
+<option value="poultry">Poultry</option>
+<option value="rabbit">Rabbit Farming</option>
+<option value="riceMill">Rice Mill</option>
+<option value="sericulture">Sericulture</option>
+<option value="sheep">Sheep Farming</option>
+<option value="soilWater">Soil & Water Lab</option>
+<option value="spices">Spices Processing</option>
+<option value="spirulina">Spirulina</option>
+<option value="vermiculture">Vermiculture</option>
+<option value="woodOil">Wood Oil Extraction</option>
+</select>
+
+<button onclick="loadData()">Load Responses</button>
+<button onclick="downloadExcel()">Download Excel</button>
+</div>
+
+<div id="tableContainer"></div>
+
+</div>
+
+<script>
+
+let currentSheetName = "responses";
+let tableData = [];
+
+function loadData() {
+  let form = document.getElementById("formSelect").value;
+  if (!form) {
+    alert("Please select a form");
+    return;
+  }
+
+  fetch("https://script.google.com/macros/s/AKfycbzv8GMTnSQzOnUcmHVO2IAnhiGsoYKCgqgPaFCTFXNGUOCab4GEBP5mhOcPbAYkLVFa/exec?form=" + form)
+    .then(res => res.json())
+  .then(response => {
+  tableData = response.data;
+  currentSheetName = response.sheetName;
+  renderTable(response.data);
+});
+}
+
+function renderTable(data) {
+  let html = "<table>";
+
+  data.forEach((row, i) => {
+    html += "<tr>";
+    row.forEach(cell => {
+      if (i === 0)
+        html += "<th>" + cell + "</th>";
+      else
+        html += "<td>" + cell + "</td>";
+    });
+    html += "</tr>";
+  });
+
+  html += "</table>";
+  document.getElementById("tableContainer").innerHTML = html;
+}
+
+function downloadExcel() {
+
+  if (tableData.length === 0) {
+    alert("Load data first");
+    return;
+  }
+
+  let csv = tableData.map(row => row.join(",")).join("\n");
+
+  let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  let link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+ link.download = currentSheetName + ".csv";
+  link.click();
+}
+</script>
+
+</body>
+</html>
