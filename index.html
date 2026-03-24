@@ -111,6 +111,9 @@ th {
 <option value="vermiculture">Vermiculture</option>
 <option value="woodOil">Wood Oil Extraction</option>
 </select>
+  <input type="date" id="startDate" placeholder="Start Date">
+  <input type="date" id="endDate" placeholder="End Date">
+
 
 <button onclick="loadData()">Load Responses</button>
 <button onclick="downloadExcel()">Download Excel</button>
@@ -141,37 +144,92 @@ function loadData() {
 });
 }
 
-function renderTable(data) {
-  let html = "<table>";
 
-  data.forEach((row, i) => {
+function renderTable(data) {
+  const startDate = document.getElementById("startDate").value;
+  const endDate = document.getElementById("endDate").value;
+
+  if (!data || data.length === 0) {
+    document.getElementById("tableContainer").innerHTML = "No data available";
+    tableData = [ ];
+    return;
+  }
+
+  const headers = data[0].map(h => (h ? h.trim() : ""));
+  let dateColIndex = 0;
+
+  // ✅ ACABC → always last column
+  if (currentSheetName === "ACABC DATA") {
+    dateColIndex = headers.length-1;
+    if (!headers[dateColIndex]) headers[dateColIndex] = "Timestamp";
+  }
+
+  const filteredData = [headers];
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    let raw = row[dateColIndex];
+
+    // ❌ skip empty / NA / null
+    if (!raw || raw === "NA") {
+      console.log("⛔ Skipped empty:", raw);
+      continue;
+    }
+
+    let d = new Date(raw);
+
+    // ❌ invalid date → skip
+    if (isNaN(d.getTime())) {
+      console.log("❌ Invalid date:", raw);
+      continue;
+    }
+
+    // ✅ SAFE conversion
+// ✅ LOCAL DATE (NO TIMEZONE ISSUE)
+const rowDateStr =
+  d.getFullYear() + "-" +
+  String(d.getMonth() + 1).padStart(2, '0') + "-" +
+  String(d.getDate()).padStart(2, '0');
+
+    // ✅ filter
+    if (
+      (!startDate || rowDateStr >= startDate) &&
+      (!endDate || rowDateStr <= endDate)
+    ) {
+      filteredData.push(row);
+    }
+  }
+
+  // render table
+  let html = "<table>";
+  filteredData.forEach((row, i) => {
     html += "<tr>";
     row.forEach(cell => {
-      if (i === 0)
-        html += "<th>" + cell + "</th>";
-      else
-        html += "<td>" + cell + "</td>";
+      html += i === 0
+        ? "<th>" + (cell || "") + "</th>"
+        : "<td>" + (cell || "") + "</td>";
     });
     html += "</tr>";
   });
-
   html += "</table>";
+
   document.getElementById("tableContainer").innerHTML = html;
+  tableData = filteredData;
+
+  console.log("✅ Filtered rows:", filteredData.length - 1);
 }
 
 function downloadExcel() {
-
   if (tableData.length === 0) {
     alert("Load data first");
     return;
   }
 
   let csv = tableData.map(row => row.join(",")).join("\n");
-
   let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   let link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
- link.download = currentSheetName + ".csv";
+  link.download = currentSheetName + ".csv";
   link.click();
 }
 </script>
